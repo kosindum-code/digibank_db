@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign In - DigiBank</title>
+<link rel="icon" type="image/png" th:href="@{/images/logo/logo.png}">
+<link rel="apple-touch-icon" th:href="@{/images/logo/logo.png}">
+<link rel="stylesheet" th:href="@{/css/auth.css}">
+</head>
+<body class="login-page">
+
+<div class="login-ambient" aria-hidden="true">
+  <span class="money-symbol">$</span>
+  <span class="money-symbol">$</span>
+  <span class="money-symbol">$</span>
+  <span class="money-symbol">$</span>
+  <span class="money-symbol">$</span>
+  <span class="money-symbol">$</span>
+  <span class="money-symbol">$</span>
+  <span class="money-symbol">$</span>
+  <span class="money-symbol">$</span>
+  <span class="money-symbol">$</span>
+  <span class="money-symbol">$</span>
+  <span class="money-symbol">$</span>
+</div>
+
+<div class="pillnav">
+  <div class="pillnav-inner">
+    <a th:href="@{/}">Home</a>
+    <a th:href="@{/login}" class="current">Login</a>
+    <a th:href="@{/open-account}">Register</a>
+  </div>
+</div>
+
+<main class="login-shell">
+  <section class="login-card login-card-compact">
+    <div class="login-form-panel">
+      <a class="login-brand login-brand-centered" th:href="@{/}">
+        <span><img th:src="@{/images/logo/logo.png}" alt="DigiBank logo"></span>
+        <strong>DigiBank</strong>
+      </a>
+      <div class="login-form-head">
+        <h1>Welcome back</h1>
+      </div>
+
+      <div class="auth-alert error" th:if="${param.error}">
+        We could not sign you in with those details. Please check them and try again.
+      </div>
+	  <div class="auth-alert error" th:if="${param.disabled}">
+		This profile is awaiting verification or has been deactivated. Contact DigiBank support for help.
+	  </div>
+      <div class="auth-alert error" th:if="${param.locked}">
+        This account is temporarily unavailable. Contact DigiBank support for help.
+      </div>
+      <div class="auth-alert ok" th:if="${param.logout}">
+        You’re securely signed out.
+      </div>
+
+      <form id="loginForm" th:action="@{/login}" method="post" novalidate>
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <div class="field">
+          <label for="username">Username or Email</label>
+          <input type="text" id="username" name="username" placeholder="you@example.com" autocomplete="username">
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password">
+            <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password">Show</button>
+          </div>
+        </div>
+
+        <div class="row-between">
+          <label class="remember">
+            <input type="checkbox" name="remember-device" autocomplete="off">
+            Remember this device
+          </label>
+          <a class="forgot" th:href="@{/forgot-password}">Forgot password?</a>
+        </div>
+
+        <button class="btn login-submit" type="submit"><span>Sign In Securely</span><span aria-hidden="true">→</span></button>
+        <div class="toast" id="loginToast" role="status" aria-live="polite"></div>
+      </form>
+
+      <div class="signin-note">
+        New to DigiBank? <a th:href="@{/open-account}">Open an account</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script th:src="@{/js/login.js}"></script>
+</body>
+</html>

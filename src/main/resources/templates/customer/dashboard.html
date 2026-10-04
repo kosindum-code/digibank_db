@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Customer Dashboard - DigiBank</title>
+<link rel="icon" type="image/png" th:href="@{/images/logo/logo.png}">
+<link rel="apple-touch-icon" th:href="@{/images/logo/logo.png}">
+<link rel="stylesheet" th:href="@{/css/auth.css}">
+<link rel="stylesheet" th:href="@{/css/customer.css}">
+</head>
+<body class="customer-shell">
+<div th:replace="~{fragments/customer-layout :: topbar}"></div>
+
+<main class="customer-layout">
+  <div th:replace="~{fragments/customer-layout :: sidebar}"></div>
+
+  <section class="customer-content" th:object="${dashboard}">
+    <div th:replace="~{fragments/customer-layout :: alerts}"></div>
+
+    <div class="welcome-band">
+      <div>
+        <p class="eyebrow">Customer Dashboard</p>
+        <h1 th:text="'Welcome, ' + *{fullName}">Welcome, Customer</h1>
+        <span class="mono" th:text="*{customerNumber}">CUS2026000123</span>
+      </div>
+      <div class="avatar" th:if="*{profileImagePath == null}" th:text="*{initials}">DB</div>
+      <img class="avatar image" th:if="*{profileImagePath != null}" th:src="*{profileImagePath}" alt="Profile picture">
+    </div>
+
+    <div class="dashboard-grid" th:if="*{primaryAccount != null}" th:object="${dashboard.primaryAccount}">
+      <article class="balance-card">
+        <p class="eyebrow">Available Balance</p>
+        <h2 th:text="'LKR ' + *{availableBalance}">LKR 0.00</h2>
+        <div class="split-row">
+          <span>Current balance</span>
+          <strong th:text="'LKR ' + *{currentBalance}">LKR 0.00</strong>
+        </div>
+      </article>
+
+      <article class="info-card">
+        <h2>Account Summary</h2>
+        <div class="kv"><span>Type</span><strong th:text="*{accountType}">SAVINGS</strong></div>
+        <div class="kv" data-account-text-visibility>
+          <span>Account Number</span>
+          <span class="account-inline-value">
+            <strong data-account-number-text th:text="*{maskedAccountNumber}"
+                    th:attr="data-masked-number=*{maskedAccountNumber},data-full-number=*{accountNumber}">********9012</strong>
+            <button class="account-eye-button compact-eye" type="button" data-account-text-toggle
+                    aria-pressed="false" aria-label="Show full account number" title="Show account number">
+              <span class="eye-shape" aria-hidden="true"></span>
+            </button>
+          </span>
+        </div>
+        <div class="kv"><span>Status</span><strong class="status-pill" th:text="*{accountStatus}">PENDING_ACTIVATION</strong></div>
+        <div class="kv"><span>Branch</span><strong th:text="*{branchCode}">COL001</strong></div>
+        <div class="kv"><span>Currency</span><strong th:text="*{currencyCode}">LKR</strong></div>
+        <div class="kv"><span>Opened</span><strong th:text="*{openedAt != null ? #temporals.format(openedAt, 'dd MMM yyyy') : '-'}">-</strong></div>
+      </article>
+
+      <article class="info-card">
+        <h2>Access Details</h2>
+        <div class="kv"><span>Last Login</span><strong th:text="${dashboard.lastLoginAt != null ? #temporals.format(dashboard.lastLoginAt, 'dd MMM yyyy HH:mm') : 'First login'}">First login</strong></div>
+        <div class="kv"><span>Banking Transactions</span><strong th:text="*{accountStatus.name() == 'ACTIVE' ? 'Available' : 'After activation'}">After activation</strong></div>
+        <a class="btn btn-gotologin full-btn" th:if="*{accountStatus.name() == 'ACTIVE'}" th:href="@{/customer/transfers/new}">Send Money</a>
+        <a class="btn btn-save full-btn" th:if="*{accountStatus.name() == 'ACTIVE'}" th:href="@{/customer/cards}">Manage Cards</a>
+        <a class="btn btn-save full-btn" th:if="*{accountStatus.name() == 'ACTIVE'}" th:href="@{/customer/bill-payments/new}">Pay a Bill</a>
+        <a class="btn btn-prev full-btn" th:href="@{/customer/accounts/{accountNumber}(accountNumber=*{accountNumber})}">View Account</a>
+      </article>
+    </div>
+
+    <section class="dashboard-transactions" th:if="${dashboard.primaryAccount != null}">
+      <div class="section-heading"><div><p class="eyebrow">Latest activity</p><h2>Recent transactions</h2></div>
+        <a th:href="@{/customer/transactions}">View full statement</a></div>
+      <div class="empty-state compact" th:if="${#lists.isEmpty(recentTransactions)}"><p>No account transactions yet.</p></div>
+      <div class="transaction-ledger compact" th:unless="${#lists.isEmpty(recentTransactions)}">
+        <a th:each="transaction : ${recentTransactions}" th:href="@{/customer/transactions/{id}(id=${transaction.id})}">
+          <span class="transaction-direction" th:classappend="${transaction.direction.name() == 'CREDIT' ? ' credit' : ' debit'}"
+                th:text="${transaction.direction.name() == 'CREDIT' ? '↓' : '↑'}">↓</span>
+          <span class="transaction-party"><strong th:text="${transaction.counterpartyName}">Name</strong>
+            <small th:text="${#temporals.format(transaction.occurredAt, 'dd MMM yyyy HH:mm')}">Date</small></span>
+          <strong class="transaction-amount" th:classappend="${transaction.direction.name() == 'CREDIT' ? ' credit' : ' debit'}"
+                  th:text="${(transaction.direction.name() == 'CREDIT' ? '+ LKR ' : '- LKR ') + #numbers.formatDecimal(transaction.amount, 1, 2)}">Amount</strong>
+        </a>
+      </div>
+    </section>
+
+    <div class="notice" th:unless="*{primaryAccount != null}">
+      <div class="ic">i</div>
+      <div>
+        <h3>No account found</h3>
+        <p>Your customer profile is available, but no bank account is linked yet. Please contact DigiBank staff.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div th:replace="~{fragments/customer-layout :: footer}"></div>
+</body>
+</html>
