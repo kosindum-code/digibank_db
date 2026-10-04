@@ -53,7 +53,7 @@ public class CustomerController {
 		model.addAttribute("profile", customerProfileService.getProfile(userDetails));
 		return "customer/profile-edit";
 	}
-
+    //postmap
 	@PostMapping("/customer/profile/edit")
 	public String updateProfile(@AuthenticationPrincipal CustomUserDetails userDetails,
 			@Valid @ModelAttribute("profileUpdateRequest") CustomerProfileUpdateRequest request,
