@@ -1,4 +1,4 @@
-package com.digibank.controller;
+ package com.digibank.controller;
 
 import com.digibank.dto.loan.LoanApplicationRequest;
 import com.digibank.dto.loan.LoanRepaymentRequest;
