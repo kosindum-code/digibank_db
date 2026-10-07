@@ -111,11 +111,17 @@ public class LoanManagementServiceImpl implements LoanManagementService {
 		StoredLoanDocument document = documentStorage.store(request.getSupportingDocument());
 		String documentName = document == null ? optionalBounded(request.getSupportingDocumentReference(), 255,
 				"Supporting document reference") : document.originalFilename();
+
+    //  Create a new loan application entity using the customer-submitted details.
+
 		LoanApplication loan = new LoanApplication(customer, account, applicationNumber(), request.getLoanType(),
 				money(request.getRequestedAmount()), rate, request.getTermMonths(), installment,
 				money(request.getMonthlyIncome()), bounded(request.getEmploymentStatus(), 80, "Employment status"),
 				bounded(request.getPurpose(), 500, "Loan purpose"), documentName);
 		if (document != null) loan.attachDocument(document.originalFilename(), document.storedFilename(), document.contentType(), document.size());
+
+    //  Save the new application; Hibernate generates an INSERT query.
+
 		loanRepository.save(loan);
 		auditLogRepository.save(new AuditLog(actor(actorUsername), "LOAN_APPLICATION_SUBMITTED", "LOAN_APPLICATION",
 				loan.getApplicationNumber(), null, LoanStatus.PENDING_REVIEW.name(),
@@ -146,16 +152,25 @@ public class LoanManagementServiceImpl implements LoanManagementService {
 		String oldStoredName=loan.getSupportingDocumentStoredName();
 		String documentName=document==null?optionalBounded(request.getSupportingDocumentReference(),255,
 				"Supporting document reference"):document.originalFilename();
+
+   //  Update the fields of the existing pending application.
+
 		loan.revise(account,request.getLoanType(),money(request.getRequestedAmount()),rate,request.getTermMonths(),installment,
 				money(request.getMonthlyIncome()),bounded(request.getEmploymentStatus(),80,"Employment status"),
 				bounded(request.getPurpose(),500,"Loan purpose"),documentName);
 		if(document!=null){loan.attachDocument(document.originalFilename(),document.storedFilename(),document.contentType(),document.size());documentStorage.deleteAfterCommit(oldStoredName);}
+
+   //  Persist the edits to the existing application; Hibernate generates an UPDATE query.
+
 		loanRepository.save(loan); auditLogRepository.save(new AuditLog(actor(actorUsername),"LOAN_APPLICATION_UPDATED","LOAN_APPLICATION",
 				applicationNumber,LoanStatus.PENDING_REVIEW.name(),LoanStatus.PENDING_REVIEW.name(),"Pending application updated by customer.",LocalDateTime.now()));
 	}
 
 	@Override @Transactional
 	public void withdrawPendingApplication(Long userId,String actorUsername,String applicationNumber){
+
+   //  Withdrawal marks the record CANCELLED and saves it; this is an UPDATE, not a physical DELETE.
+
 		LoanApplication loan=customerPendingLoan(userId,applicationNumber); loan.cancel(LocalDateTime.now()); loanRepository.save(loan);
 		auditLogRepository.save(new AuditLog(actor(actorUsername),"LOAN_APPLICATION_WITHDRAWN","LOAN_APPLICATION",applicationNumber,
 				LoanStatus.PENDING_REVIEW.name(),LoanStatus.CANCELLED.name(),"Withdrawn by customer.",LocalDateTime.now()));
@@ -234,7 +249,13 @@ public class LoanManagementServiceImpl implements LoanManagementService {
 		account.setAvailableBalance(account.getAvailableBalance().add(amount));
 		account.setCurrentBalance(account.getCurrentBalance().add(amount));
 		accountRepository.save(account);
+
+    //  Set the existing application to DISBURSED and record its approval details.
+
 		loan.disburse(actor(actorUsername), optional(note, 500), amount, installment, now);
+
+    //  Persist the approval; Hibernate generates an UPDATE query.
+
 		loanRepository.saveAndFlush(loan);
 		transactionRepository.save(new AccountTransaction(account, loan.getApplicationNumber(),
 				TransactionDirection.CREDIT, AccountTransactionType.LOAN_DISBURSEMENT, amount,
